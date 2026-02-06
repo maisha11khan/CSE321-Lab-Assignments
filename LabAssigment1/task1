@@ -1,0 +1,80 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+#define MAX_TERMS 40
+
+// Global variables
+int *x; // Fibonacci sequence array
+int y; // Number of Fibonacci terms
+int z; // Number of searches
+
+// Function to compute Fibonacci sequence
+void* fibonacci_sequence_gen(void* a) {
+    x = (int*) malloc(y * sizeof(int)); // Allocate memory for Fibonacci sequence
+    x[0] = 0;
+    x[1] = 1;
+    
+    for (int i = 2; i < y; i++) {
+        x[i] = x[i-1] + x[i-2];
+    }
+    pthread_exit(NULL);
+}
+
+// Function to search for a Fibonacci term
+void* fibonacci_value_search(void* b) {
+    int* search_indices = (int*) b;
+    
+    for (int i = 0; i < z; i++) {
+        int idx = search_indices[i];
+        if (idx >= 0 && idx < y) {
+            printf("result of search #%d = %d\n", i+1, x[idx]);
+        } else {
+            printf("result of search #%d = -1\n", i+1);
+        }
+    }
+    pthread_exit(NULL);
+}
+
+int main() {
+    // Get user input
+    printf("Enter the term of fibonacci sequence: ");
+    scanf("%d", &y);
+
+    if (y <= 0 || y > MAX_TERMS) {
+        printf("Invalid number of terms.\n");
+        return 1;
+    }
+
+    printf("How many numbers you are willing to search?: ");
+    scanf("%d", &z);
+
+    if (z <= 0) {
+        printf("Number of searches must be greater than 0.\n");
+        return 1;
+    }
+
+    int *search_indices = (int*) malloc(z * sizeof(int));
+    for (int i = 0; i < z; i++) {
+        printf("Enter search %d: ", i+1);
+        scanf("%d", &search_indices[i]);
+    }
+
+    // Create threads for Fibonacci sequence generation and search
+    pthread_t thread1, thread2;
+    pthread_create(&thread1, NULL, fibonacci_sequence_gen, NULL);
+    pthread_join(thread1, NULL); // Wait for the Fibonacci sequence to be computed
+
+    // Print the Fibonacci sequence
+    for (int i = 0; i < y; i++) {
+        printf("a[%d] = %d\n", i, x[i]);
+    }
+
+    pthread_create(&thread2, NULL, fibonacci_value_search, (void*) search_indices);
+    pthread_join(thread2, NULL); // Wait for the search results
+
+    free(x);
+    free(search_indices);
+
+    return 0;
+}
